@@ -10,6 +10,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.card.MaterialCardView;
+
 import java.util.List;
 
 public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder> {
@@ -44,6 +47,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         holder.tvPriority.setText(task.getPriority());
         holder.tvDate.setText(task.getDeadline());
 
+
         // Hapus listener sementara saat set nilai awal
         holder.cbDone.setOnCheckedChangeListener(null);
 
@@ -52,23 +56,31 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
             holder.cbDone.setChecked(true);
             holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             holder.tvTitle.setTextColor(Color.GRAY);
+            holder.cardTask.setCardBackgroundColor(Color.parseColor("#F5F5F5"));
+            holder.tvPriority.setBackgroundColor(Color.parseColor("#E0E0E0"));
+            holder.tvPriority.setTextColor(Color.parseColor("#9E9E9E"));
+            holder.tvDate.setTextColor(Color.parseColor("#9E9E9E"));
+            holder.tvCourse.setTextColor(Color.parseColor("#9E9E9E"));
+            holder.btnEdit.setColorFilter(Color.parseColor("#9E9E9E"));
+            holder.btnDelete.setColorFilter(Color.parseColor("#9E9E9E"));
+
+
         } else {
             holder.cbDone.setChecked(false);
             holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
             holder.tvTitle.setTextColor(Color.parseColor("#212121")); // Warna teks default
+            // Ganti warna background dan teks berdasarkan level prioritas
+            if (task.getPriority().equalsIgnoreCase("TINGGI")) {
+                holder.tvPriority.setTextColor(Color.parseColor("#C62828")); // Teks Merah
+                holder.tvPriority.setBackgroundColor(Color.parseColor("#FFEBEE")); // BG Merah Muda
+            } else if (task.getPriority().equalsIgnoreCase("SEDANG")) {
+                holder.tvPriority.setTextColor(Color.parseColor("#F57F17")); // Teks Oranye
+                holder.tvPriority.setBackgroundColor(Color.parseColor("#FFFDE7")); // BG Kuning
+            } else {
+                holder.tvPriority.setTextColor(Color.parseColor("#2E7D32")); // Teks Hijau
+                holder.tvPriority.setBackgroundColor(Color.parseColor("#E8F5E9")); // BG Hijau Muda
+            }
         }
-        // Ganti warna background dan teks berdasarkan level prioritas
-        if (task.getPriority().equalsIgnoreCase("TINGGI")) {
-            holder.tvPriority.setTextColor(Color.parseColor("#C62828")); // Teks Merah
-            holder.tvPriority.setBackgroundColor(Color.parseColor("#FFEBEE")); // BG Merah Muda
-        } else if (task.getPriority().equalsIgnoreCase("SEDANG")) {
-            holder.tvPriority.setTextColor(Color.parseColor("#F57F17")); // Teks Oranye
-            holder.tvPriority.setBackgroundColor(Color.parseColor("#FFFDE7")); // BG Kuning
-        } else {
-            holder.tvPriority.setTextColor(Color.parseColor("#2E7D32")); // Teks Hijau
-            holder.tvPriority.setBackgroundColor(Color.parseColor("#E8F5E9")); // BG Hijau Muda
-        }
-
         // Listener Klik
         holder.cbDone.setOnCheckedChangeListener((buttonView, isChecked) -> listener.onStatusChanged(task.getId(), isChecked));
         holder.btnDelete.setOnClickListener(v -> listener.onDeleteClicked(task.getId()));
@@ -84,6 +96,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         TextView tvTitle, tvCourse, tvPriority, tvDate;
         CheckBox cbDone;
         ImageView btnEdit, btnDelete;
+        MaterialCardView cardTask;
 
         public TaskViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -94,6 +107,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
             cbDone = itemView.findViewById(R.id.cb_task_status);
             btnEdit = itemView.findViewById(R.id.iv_edit);
             btnDelete = itemView.findViewById(R.id.iv_delete);
+            cardTask = itemView.findViewById(R.id.card_task);
         }
     }
 }
