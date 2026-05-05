@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="purple">#CDA7FD</color>
+    <color name="colorPrimary">#3D5AFE</color>
+    <color name="colorBackground">#F5F5F5</color>
+    <color name="colorTextPrimary">#212121</color>
+
+    <!-- Warna Prioritas & Matkul -->
+    <color name="bg_high_priority">#FFCDD2</color>
+    <color name="text_high_priority">#B71C1C</color>
+    <color name="bg_medium_priority">#FFF9C4</color>
+    <color name="text_medium_priority">#FBC02D</color>
+    <color name="bg_course">#E3F2FD</color>
+    <color name="text_course">#1565C0</color>
+
+</resources>
