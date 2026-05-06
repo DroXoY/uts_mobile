@@ -370,18 +370,11 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onDeleteClicked(int taskId) {
-                // Tampilkan konfirmasi sebelum hapus (opsional tapi bagus)
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Hapus Tugas")
-                        .setMessage("Yakin ingin menghapus tugas ini?")
-                        .setPositiveButton("Hapus", (dialog, which) -> {
-                            dbHelper.deleteTask(taskId);
-                            loadData(); // Refresh layar
-                            Toast.makeText(MainActivity.this, "Tugas Dihapus", Toast.LENGTH_SHORT).show();
-                        })
-                        .setNegativeButton("Batal", null)
-                        .show();
+                dbHelper.deleteTask(taskId);
+                loadData(); // Refresh layar
+                Toast.makeText(MainActivity.this, "Tugas Dihapus", Toast.LENGTH_SHORT).show();
             }
+
 
             @Override
             public void onEditClicked(Task task) {
