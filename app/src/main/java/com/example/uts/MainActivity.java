@@ -115,6 +115,11 @@ public class MainActivity extends AppCompatActivity {
         btnTambah.setOnClickListener(v -> showAddTaskDialog());
         android.widget.ImageView btnTentangKami = findViewById(R.id.btnTentangKami);
         btnTentangKami.setOnClickListener(v -> showAboutUsDialog());
+        MaterialButton btnNavDashboard = findViewById(R.id.btn_nav_dashboard);
+        btnNavDashboard.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(this, DashboardActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void showAboutUsDialog() {
