@@ -113,6 +113,21 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnTambah = findViewById(R.id.btn_tambah);
         btnTambah.setOnClickListener(v -> showAddTaskDialog());
+        android.widget.ImageView btnTentangKami = findViewById(R.id.btnTentangKami);
+        btnTentangKami.setOnClickListener(v -> showAboutUsDialog());
+    }
+
+    private void showAboutUsDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("👥 About Us")
+                .setMessage(
+                        "Aplikasi ini dibuat oleh:\n\n" +
+                                "1. Farrel Endra A.\n   NIM: 24410100016\n\n" +
+                                "2. Michael Christoper\n   NIM: 24410100007\n\n" +
+                                "3. Jonathan Kevin\n   NIM: 24410100027"
+                )
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     private void loadDataKalender(String date) {

@@ -36,7 +36,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:src="@drawable/ic_team"
-        android:text="@string/tentang_kami_nfarrel_endra_a_24410100016_n_michael_christoper_24410100007_n_jonathan_kevin_24410100027"
+
 
         android:contentDescription="Tentang Tim"
         android:clickable="true"
