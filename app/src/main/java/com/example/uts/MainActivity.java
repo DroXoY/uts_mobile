@@ -57,6 +57,8 @@ public class MainActivity extends AppCompatActivity {
 
         loadData();
 
+
+
         btnNavDaftar = findViewById(R.id.btn_nav_daftar);
         btnNavKalender = findViewById(R.id.btn_nav_kalender);
         layoutDaftar = findViewById(R.id.layout_halaman_daftar);
@@ -64,6 +66,15 @@ public class MainActivity extends AppCompatActivity {
 
         setupNavigation();
         calendarView = findViewById(R.id.calendar_view);
+        // Kunci kalender agar tanggal sebelum hari ini tidak bisa dipilih
+        Calendar today = Calendar.getInstance();
+        // Set waktu ke tengah malam hari ini supaya hari ini sendiri masih bisa dipilih
+        today.set(Calendar.HOUR_OF_DAY, 0);
+        today.set(Calendar.MINUTE, 0);
+        today.set(Calendar.SECOND, 0);
+        today.set(Calendar.MILLISECOND, 0);
+        calendarView.setMinDate(today.getTimeInMillis());
+
         rvTugasKalender = findViewById(R.id.rv_tugas_kalender);
         rvTugasKalender.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
         tvLabelKalender = findViewById(R.id.tv_label_kalender);
@@ -453,5 +464,44 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         rvTugasUtama.setAdapter(adapter);
+
+        checkOverdueTasks(taskList);
+    }
+
+    private void checkOverdueTasks(List<Task> tasks) {
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("d/M/yyyy", java.util.Locale.getDefault());
+
+        Calendar todayCal = Calendar.getInstance();
+        todayCal.set(Calendar.HOUR_OF_DAY, 0);
+        todayCal.set(Calendar.MINUTE, 0);
+        todayCal.set(Calendar.SECOND, 0);
+        todayCal.set(Calendar.MILLISECOND, 0);
+
+        StringBuilder overdueTasks = new StringBuilder();
+
+        for (Task task : tasks) {
+            // Cek hanya yang belum selesai (status == 0)
+            if (task.getStatus() == 0) {
+                try {
+                    java.util.Date deadlineDate = sdf.parse(task.getDeadline());
+                    // Jika tanggal deadline SEBELUM hari ini → terlambat
+                    if (deadlineDate != null && deadlineDate.before(todayCal.getTime())) {
+                        overdueTasks.append("• ").append(task.getTitle())
+                                .append(" (").append(task.getDeadline()).append(")\n");
+                    }
+                } catch (Exception e) {
+                    // Abaikan jika format tanggal tidak valid
+                }
+            }
+        }
+
+        // Tampilkan alert jika ada tugas yang terlambat
+        if (overdueTasks.length() > 0) {
+            new AlertDialog.Builder(this)
+                    .setTitle("⚠️ Tugas Terlambat dari Deadline!")
+                    .setMessage("Tugas berikut belum diselesaikan dan sudah melewati deadline:\n\n" + overdueTasks.toString())
+                    .setPositiveButton("OK", null)
+                    .show();
+        }
     }
 }
