@@ -95,8 +95,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // Fungsi untuk mengambil data berdasarkan tanggal
     public Cursor getTasksByDate(String date) {
         SQLiteDatabase db = this.getReadableDatabase();
-        // Cari yang kolom deadlinenya sama dengan tanggal yang diklik
-        return db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE " + COL_DEADLINE + " = ?", new String[]{date});
+        // Gunakan LIKE dan tambahkan % di akhir tanggal
+        // % artinya "cari yang depannya sama dengan tanggal ini, sisanya (jam) bebas apa saja"
+        return db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE " + COL_DEADLINE + " LIKE ?", new String[]{date + "%"});
     }
 
 }

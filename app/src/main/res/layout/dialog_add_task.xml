@@ -71,6 +71,14 @@
             android:text="Pilih Tanggal Deadline"
             app:layout_constraintTop_toBottomOf="@id/til_priority"
             app:layout_constraintStart_toStartOf="parent" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_pick_time"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Pilih Jam"
+            app:layout_constraintTop_toBottomOf="@id/btn_pick_date" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_save_task"
@@ -78,7 +86,7 @@
             android:layout_height="wrap_content"
             android:text="Simpan Tugas"
             android:layout_marginTop="24dp"
-            app:layout_constraintTop_toBottomOf="@id/btn_pick_date" />
+            app:layout_constraintTop_toBottomOf="@id/btn_pick_time" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
