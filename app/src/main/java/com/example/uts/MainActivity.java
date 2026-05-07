@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private TaskAdapter adapterKalender;
     private android.widget.TextView tvLabelKalender;
     private String currentSort = "Deadline"; // Default urutkan dari deadline
+    private String currentCalendarDate = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,10 +67,13 @@ public class MainActivity extends AppCompatActivity {
         rvTugasKalender.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
         tvLabelKalender = findViewById(R.id.tv_label_kalender);
 
-// Pasang sensor klik pada Kalender
+
+
+        // Pasang sensor klik pada Kalender
         calendarView.setOnDateChangeListener((view, year, month, dayOfMonth) -> {
             // Format tanggal harus SAMA PERSIS dengan format yang kamu simpan dari DatePicker
             String selectedDate = dayOfMonth + "/" + (month + 1) + "/" + year;
+            currentCalendarDate = selectedDate;
 
             // Ubah teks label agar lebih interaktif
             tvLabelKalender.setText("Tugas pada: " + selectedDate);
@@ -79,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         });
         Spinner spinnerSort = findViewById(R.id.spinner_sort);
         String[] opsiSort = {"Deadline", "Nama Tugas", "Prioritas"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, opsiSort);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.spinner_item, opsiSort);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerSort.setAdapter(adapter);
         // Tambahkan sensor ini agar saat user milih, list-nya langsung berubah
@@ -136,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onEditClicked(Task task) {
-                android.widget.Toast.makeText(MainActivity.this, "Fitur Edit (Kalender)", android.widget.Toast.LENGTH_SHORT).show();
+                showEditTaskDialog(task);
             }
         });
 
@@ -173,8 +177,8 @@ public class MainActivity extends AppCompatActivity {
             String priority = actvPriority.getText().toString();
             String date = btnPickDate.getText().toString();
 
-            if (title.isEmpty() || date.equals("Pilih Tanggal Deadline")) {
-                Toast.makeText(this, "Nama Tugas dan Tanggal wajib diisi!", Toast.LENGTH_SHORT).show();
+            if (title.isEmpty() || date.equals("Pilih Tanggal Deadline") || priority.isEmpty() || course.isEmpty()) {
+                Toast.makeText(this, "Semua kolom wajib diisi!", Toast.LENGTH_SHORT).show();
             } else {
                 // PERINTAH SQLITE: Simpan data
                 long result = dbHelper.insertTask(title, course, priority, date);
@@ -215,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
         etCourse.setText(taskToEdit.getCourse());
         btnPickDate.setText(taskToEdit.getDeadline());
 
-        String[] priorities = {"TINGGI", "SEDANG"};
+        String[] priorities = {"TINGGI", "SEDANG", "RENDAH"};
         android.widget.ArrayAdapter<String> priorityAdapter = new android.widget.ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, priorities);
         actvPriority.setAdapter(priorityAdapter);
         // Set prioritas lama (jangan lupa kasih false biar dropdown tidak langsung kebuka)
@@ -240,6 +244,9 @@ public class MainActivity extends AppCompatActivity {
                 android.widget.Toast.makeText(this, "Tugas berhasil diupdate!", android.widget.Toast.LENGTH_SHORT).show();
 
                 loadData(); // Refresh list utama
+                if (layoutKalender.getVisibility() == View.VISIBLE && !currentCalendarDate.isEmpty()) {
+                    loadDataKalender(currentCalendarDate);
+                }
                 dialog.dismiss();
             }
         });
@@ -279,6 +286,7 @@ public class MainActivity extends AppCompatActivity {
             String todayDate = cal.get(java.util.Calendar.DAY_OF_MONTH) + "/" +
                     (cal.get(java.util.Calendar.MONTH) + 1) + "/" +
                     cal.get(java.util.Calendar.YEAR);
+            currentCalendarDate = todayDate;
 
             // Update label dan panggil data
             tvLabelKalender.setText("Tugas pada: " + todayDate);
@@ -325,7 +333,7 @@ public class MainActivity extends AppCompatActivity {
             java.util.Collections.sort(taskList, (t1, t2) -> t1.getTitle().compareToIgnoreCase(t2.getTitle()));
 
         } else if (currentSort.equals("Prioritas")) {
-            // Urutkan TINGGI lalu SEDANG
+            // Urutkan TINGGI lalu SEDANG lalu RENDAH
             java.util.Collections.sort(taskList, (t1, t2) -> {
                 // Beri nilai untuk Tugas 1
                 int val1 = t1.getPriority().equalsIgnoreCase("TINGGI") ? 3 :
@@ -364,18 +372,11 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onDeleteClicked(int taskId) {
-                // Tampilkan konfirmasi sebelum hapus (opsional tapi bagus)
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("Hapus Tugas")
-                        .setMessage("Yakin ingin menghapus tugas ini?")
-                        .setPositiveButton("Hapus", (dialog, which) -> {
-                            dbHelper.deleteTask(taskId);
-                            loadData(); // Refresh layar
-                            Toast.makeText(MainActivity.this, "Tugas Dihapus", Toast.LENGTH_SHORT).show();
-                        })
-                        .setNegativeButton("Batal", null)
-                        .show();
+                dbHelper.deleteTask(taskId);
+                loadData(); // Refresh layar
+                Toast.makeText(MainActivity.this, "Tugas Dihapus", Toast.LENGTH_SHORT).show();
             }
+
 
             @Override
             public void onEditClicked(Task task) {
