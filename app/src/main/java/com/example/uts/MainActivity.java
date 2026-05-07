@@ -2,6 +2,7 @@ package com.example.uts;
 
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -132,10 +133,18 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onDeleteClicked(int taskId) {
-                dbHelper.deleteTask(taskId);
-                loadDataKalender(date);
-                loadData();
-                android.widget.Toast.makeText(MainActivity.this, "Tugas Dihapus", android.widget.Toast.LENGTH_SHORT).show();
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Hapus Tugas")
+                        .setMessage("Yakin ingin menghapus tugas ini?")
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            dbHelper.deleteTask(taskId);
+                            loadDataKalender(date); // Refresh list kalender saat ini
+                            loadData(); // Refresh list utama agar sinkron
+                            Toast.makeText(MainActivity.this, "Tugas Dihapus", Toast.LENGTH_SHORT).show();
+                        })
+                        .setNegativeButton("Batal", null) // 'null' berarti dialog otomatis tertutup saja
+                        .show();
             }
 
             @Override
@@ -161,6 +170,8 @@ public class MainActivity extends AppCompatActivity {
         AutoCompleteTextView actvPriority = dialogView.findViewById(R.id.actv_priority);
         MaterialButton btnPickDate = dialogView.findViewById(R.id.btn_pick_date);
         MaterialButton btnSave = dialogView.findViewById(R.id.btn_save_task);
+        MaterialButton btnPickTime = dialogView.findViewById(R.id.btn_pick_time);
+        btnPickTime.setOnClickListener(v -> showTimePicker(btnPickTime));
 
         // Setup Dropdown Prioritas di dalam form
         String[] priorities = {"TINGGI", "SEDANG", "RENDAH"};
@@ -170,28 +181,43 @@ public class MainActivity extends AppCompatActivity {
         // Setup klik tombol kalender
         btnPickDate.setOnClickListener(v -> showDatePicker(btnPickDate));
 
-        // Setup klik tombol simpan (sementara cuma nge-print Toast dulu)
+        // Setup klik tombol simpan
         btnSave.setOnClickListener(v -> {
             String title = etName.getText().toString();
             String course = etCourse.getText().toString();
             String priority = actvPriority.getText().toString();
             String date = btnPickDate.getText().toString();
+            String time = btnPickTime.getText().toString();
 
-            if (title.isEmpty() || date.equals("Pilih Tanggal Deadline") || priority.isEmpty() || course.isEmpty()) {
-                Toast.makeText(this, "Semua kolom wajib diisi!", Toast.LENGTH_SHORT).show();
-            } else {
-                // PERINTAH SQLITE: Simpan data
-                long result = dbHelper.insertTask(title, course, priority, date);
-
-                if (result != -1) {
-                    Toast.makeText(this, "Tugas berhasil disimpan!", Toast.LENGTH_SHORT).show();
-                    loadData();
-                    dialog.dismiss();
-                } else {
-                    Toast.makeText(this, "Gagal menyimpan data!", Toast.LENGTH_SHORT).show();
-                }
+            // 1. Validasi Semua Kolom (Jadikan satu pintu)
+            if (title.isEmpty() || course.isEmpty() || priority.isEmpty() || date.equals("Pilih Tanggal Deadline") || time.equals("Pilih Jam")) {
+                Toast.makeText(this, "Semua kolom wajib diisi dengan benar!", Toast.LENGTH_SHORT).show();
+                return; // Langsung hentikan proses di sini jika ada yang kosong
             }
-        });
+
+            // 2. GABUNGKAN TANGGAL DAN JAM
+            String fullDeadline = date + " " + time; // Hasilnya: "24/5/2026 14:00"
+
+            // 3. PERINTAH SQLITE: Simpan data (CUKUP PANGGIL 1 KALI SAJA)
+            long result = dbHelper.insertTask(title, course, priority, fullDeadline);
+
+            // 4. Cek Hasil
+            if (result != -1) {
+                Toast.makeText(this, "Tugas berhasil disimpan!", Toast.LENGTH_SHORT).show();
+
+                // Refresh list utama
+                loadData();
+
+                // (Opsional) Refresh list kalender jika sedang terbuka
+                if (layoutKalender.getVisibility() == View.VISIBLE && currentCalendarDate != null && !currentCalendarDate.isEmpty()) {
+                    loadDataKalender(currentCalendarDate);
+                }
+
+                dialog.dismiss();
+            } else {
+                Toast.makeText(this, "Gagal menyimpan data!", Toast.LENGTH_SHORT).show();
+            }
+        });;
 
         dialog.show();
     }
@@ -202,53 +228,78 @@ public class MainActivity extends AppCompatActivity {
 
         android.app.AlertDialog dialog = builder.create();
 
-        // Inisialisasi komponen
-        com.google.android.material.textfield.TextInputEditText etName = dialogView.findViewById(R.id.et_task_name);
-        com.google.android.material.textfield.TextInputEditText etCourse = dialogView.findViewById(R.id.et_course_name);
-        android.widget.AutoCompleteTextView actvPriority = dialogView.findViewById(R.id.actv_priority);
-        com.google.android.material.button.MaterialButton btnPickDate = dialogView.findViewById(R.id.btn_pick_date);
-        com.google.android.material.button.MaterialButton btnSave = dialogView.findViewById(R.id.btn_save_task);
+        // 1. Inisialisasi komponen
+        TextInputEditText etName = dialogView.findViewById(R.id.et_task_name);
+        TextInputEditText etCourse = dialogView.findViewById(R.id.et_course_name);
+        AutoCompleteTextView actvPriority = dialogView.findViewById(R.id.actv_priority);
+        MaterialButton btnPickDate = dialogView.findViewById(R.id.btn_pick_date);
+        MaterialButton btnPickTime = dialogView.findViewById(R.id.btn_pick_time); // Tombol Jam
+        MaterialButton btnSave = dialogView.findViewById(R.id.btn_save_task);
 
-        // Ubah teks judul dialog dan tombol
+        // 2. Ubah teks judul dialog dan tombol
         android.widget.TextView tvTitle = dialogView.findViewById(R.id.tv_dialog_title);
         tvTitle.setText("Edit Tugas");
         btnSave.setText("Update Tugas");
 
-        // === ISI OTOMATIS DATA LAMA KE DALAM FORM ===
+        // 3. === ISI OTOMATIS DATA LAMA ===
         etName.setText(taskToEdit.getTitle());
         etCourse.setText(taskToEdit.getCourse());
-        btnPickDate.setText(taskToEdit.getDeadline());
 
+        // Logika Pemisah (Split) Tanggal dan Jam
+        String oldDeadline = taskToEdit.getDeadline();
+        if (oldDeadline != null && oldDeadline.contains(" ")) {
+            String[] parts = oldDeadline.split(" ");
+            btnPickDate.setText(parts[0]); // Isi tombol tanggal
+            if (parts.length > 1) {
+                btnPickTime.setText(parts[1]); // Isi tombol jam
+            }
+        } else {
+            // Berjaga-jaga kalau data lama sebelum revisi (belum ada jamnya)
+            btnPickDate.setText(oldDeadline);
+            btnPickTime.setText("00:00");
+        }
+
+        // 4. Setup Dropdown Prioritas
         String[] priorities = {"TINGGI", "SEDANG", "RENDAH"};
         android.widget.ArrayAdapter<String> priorityAdapter = new android.widget.ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, priorities);
         actvPriority.setAdapter(priorityAdapter);
-        // Set prioritas lama (jangan lupa kasih false biar dropdown tidak langsung kebuka)
-        actvPriority.setText(taskToEdit.getPriority(), false);
+        actvPriority.setText(taskToEdit.getPriority(), false); // false biar tidak mekar otomatis
 
-        // Setup klik kalender
+        // 5. Setup Klik Waktu
         btnPickDate.setOnClickListener(v -> showDatePicker(btnPickDate));
+        btnPickTime.setOnClickListener(v -> showTimePicker(btnPickTime));
 
-        // Logika Tombol Simpan (Update)
+        // 6. Logika Tombol Simpan (UPDATE)
         btnSave.setOnClickListener(v -> {
             String newTitle = etName.getText().toString();
             String newCourse = etCourse.getText().toString();
             String newPriority = actvPriority.getText().toString();
-            String newDate = btnPickDate.getText().toString();
+            String date = btnPickDate.getText().toString();
+            String time = btnPickTime.getText().toString();
 
-            if (newTitle.isEmpty() || newDate.equals("Pilih Tanggal Deadline")) {
-                android.widget.Toast.makeText(this, "Nama Tugas dan Tanggal wajib diisi!", android.widget.Toast.LENGTH_SHORT).show();
-            } else {
-                // Panggil fungsi UPDATE dari DatabaseHelper
-                dbHelper.updateTaskData(taskToEdit.getId(), newTitle, newCourse, newPriority, newDate);
-
-                android.widget.Toast.makeText(this, "Tugas berhasil diupdate!", android.widget.Toast.LENGTH_SHORT).show();
-
-                loadData(); // Refresh list utama
-                if (layoutKalender.getVisibility() == View.VISIBLE && !currentCalendarDate.isEmpty()) {
-                    loadDataKalender(currentCalendarDate);
-                }
-                dialog.dismiss();
+            // Validasi: Jangan ada yang kosong atau masih teks default
+            if (newTitle.isEmpty() || date.equals("Pilih Tanggal Deadline") || time.equals("Pilih Jam")) {
+                Toast.makeText(this, "Nama, Tanggal, dan Jam wajib diisi!", Toast.LENGTH_SHORT).show();
+                return; // Hentikan proses kalau masih kosong
             }
+
+            // GABUNGKAN TANGGAL DAN JAM UNTUK DISIMPAN
+            String fullDeadline = date + " " + time; // Contoh: "24/5/2026 14:00"
+
+            // PANGGIL FUNGSI UPDATE DATA (Bukan Insert!)
+            dbHelper.updateTaskData(taskToEdit.getId(), newTitle, newCourse, newPriority, fullDeadline);
+
+            Toast.makeText(this, "Tugas berhasil diupdate!", Toast.LENGTH_SHORT).show();
+
+            // Refresh List Utama
+            loadData();
+
+            // Refresh List Kalender jika sedang dibuka
+            if (layoutKalender.getVisibility() == View.VISIBLE && currentCalendarDate != null && !currentCalendarDate.isEmpty()) {
+                loadDataKalender(currentCalendarDate);
+            }
+
+            dialog.dismiss(); // Tutup Pop-up
         });
 
         dialog.show();
@@ -263,6 +314,19 @@ public class MainActivity extends AppCompatActivity {
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
 
         datePickerDialog.show();
+    }
+    private void showTimePicker(MaterialButton btnPickTime) {
+        Calendar cal = Calendar.getInstance();
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        int minute = cal.get(Calendar.MINUTE);
+
+        TimePickerDialog timePickerDialog = new TimePickerDialog(this, (view, hourOfDay, minuteOfHour) -> {
+            // Format jam agar selalu 2 digit (misal: 08:05, bukan 8:5)
+            String time = String.format("%02d:%02d", hourOfDay, minuteOfHour);
+            btnPickTime.setText(time);
+        }, hour, minute, true); // 'true' untuk format 24 jam
+
+        timePickerDialog.show();
     }
 
     private void setupNavigation() {
@@ -348,8 +412,8 @@ public class MainActivity extends AppCompatActivity {
             });
 
         } else if (currentSort.equals("Deadline")) {
-            // Urutkan berdasarkan Tanggal paling dekat
-            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("d/M/yyyy", java.util.Locale.getDefault());
+            // Ubah format "d/M/yyyy" menjadi "d/M/yyyy HH:mm"
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("d/M/yyyy HH:mm", java.util.Locale.getDefault());
             java.util.Collections.sort(taskList, (t1, t2) -> {
                 try {
                     java.util.Date d1 = sdf.parse(t1.getDeadline());
@@ -370,14 +434,19 @@ public class MainActivity extends AppCompatActivity {
                 loadData(); // Refresh layar biar teksnya kecoret
             }
 
-            @Override
             public void onDeleteClicked(int taskId) {
-                dbHelper.deleteTask(taskId);
-                loadData(); // Refresh layar
-                Toast.makeText(MainActivity.this, "Tugas Dihapus", Toast.LENGTH_SHORT).show();
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Hapus Tugas")
+                        .setMessage("Yakin ingin menghapus tugas ini?")
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .setPositiveButton("Hapus", (dialog, which) -> {
+                            dbHelper.deleteTask(taskId);
+                            loadData(); // Refresh list utama agar sinkron
+                            Toast.makeText(MainActivity.this, "Tugas Dihapus", Toast.LENGTH_SHORT).show();
+                        })
+                        .setNegativeButton("Batal", null) // 'null' berarti dialog otomatis tertutup saja
+                        .show();
             }
-
-
             @Override
             public void onEditClicked(Task task) {
                 showEditTaskDialog(task);
