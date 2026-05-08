@@ -7,6 +7,7 @@ import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -25,8 +26,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -528,8 +531,8 @@ public class MainActivity extends AppCompatActivity {
     // LOGIKA PERINGATAN (OVERDUE)
     // ==========================================
     private void checkOverdueTasks(List<Task> tasks) {
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("d/M/yyyy HH:mm", java.util.Locale.getDefault());
-        java.util.Date now = new java.util.Date();
+        SimpleDateFormat sdf = new java.text.SimpleDateFormat("d/M/yyyy HH:mm", java.util.Locale.getDefault());
+        Date now = new java.util.Date();
 
         StringBuilder overdueTasks = new StringBuilder();
 
@@ -575,7 +578,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private android.os.Handler realtimeHandler = new android.os.Handler();
+    private Handler realtimeHandler = new android.os.Handler();
     private boolean isAlertShowing = false;
     private String lastAlertContent = "";
     private Runnable realtimeChecker = new Runnable() {
