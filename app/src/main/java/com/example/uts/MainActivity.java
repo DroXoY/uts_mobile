@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
         rvTugasUtama.setLayoutManager(new LinearLayoutManager(this));
 
         loadData();
-
+        startRealtimeCheck();
 
 
         btnNavDaftar = findViewById(R.id.btn_nav_daftar);
@@ -66,14 +66,7 @@ public class MainActivity extends AppCompatActivity {
 
         setupNavigation();
         calendarView = findViewById(R.id.calendar_view);
-        // Kunci kalender agar tanggal sebelum hari ini tidak bisa dipilih
-        Calendar today = Calendar.getInstance();
-        // Set waktu ke tengah malam hari ini supaya hari ini sendiri masih bisa dipilih
-        today.set(Calendar.HOUR_OF_DAY, 0);
-        today.set(Calendar.MINUTE, 0);
-        today.set(Calendar.SECOND, 0);
-        today.set(Calendar.MILLISECOND, 0);
-        calendarView.setMinDate(today.getTimeInMillis());
+
 
         rvTugasKalender = findViewById(R.id.rv_tugas_kalender);
         rvTugasKalender.setLayoutManager(new androidx.recyclerview.widget.LinearLayoutManager(this));
@@ -202,7 +195,7 @@ public class MainActivity extends AppCompatActivity {
         MaterialButton btnPickDate = dialogView.findViewById(R.id.btn_pick_date);
         MaterialButton btnSave = dialogView.findViewById(R.id.btn_save_task);
         MaterialButton btnPickTime = dialogView.findViewById(R.id.btn_pick_time);
-        btnPickTime.setOnClickListener(v -> showTimePicker(btnPickTime));
+        btnPickTime.setOnClickListener(v -> showTimePicker(btnPickDate, btnPickTime));
 
         // Setup Dropdown Prioritas di dalam form
         String[] priorities = {"TINGGI", "SEDANG", "RENDAH"};
@@ -298,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
 
         // 5. Setup Klik Waktu
         btnPickDate.setOnClickListener(v -> showDatePicker(btnPickDate));
-        btnPickTime.setOnClickListener(v -> showTimePicker(btnPickTime));
+        btnPickTime.setOnClickListener(v -> showTimePicker(btnPickDate, btnPickTime));
 
         // 6. Logika Tombol Simpan (UPDATE)
         btnSave.setOnClickListener(v -> {
@@ -344,18 +337,59 @@ public class MainActivity extends AppCompatActivity {
             btnPickDate.setText(selectedDate);
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
 
+        Calendar minDate = Calendar.getInstance();
+        minDate.set(Calendar.HOUR_OF_DAY, 0);
+        minDate.set(Calendar.MINUTE, 0);
+        minDate.set(Calendar.SECOND, 0);
+        minDate.set(Calendar.MILLISECOND, 0);
+        datePickerDialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
+
         datePickerDialog.show();
     }
-    private void showTimePicker(MaterialButton btnPickTime) {
-        Calendar cal = Calendar.getInstance();
-        int hour = cal.get(Calendar.HOUR_OF_DAY);
-        int minute = cal.get(Calendar.MINUTE);
+    private void showTimePicker(MaterialButton btnPickDate, MaterialButton btnPickTime) {
+        Calendar now = Calendar.getInstance();
+
+        // Cek apakah tanggal yang dipilih user adalah HARI INI
+        String selectedDateStr = btnPickDate.getText().toString();
+
+        // Format tanggal hari ini sama seperti yang disimpan di tombol: "d/M/yyyy"
+        String todayStr = now.get(Calendar.DAY_OF_MONTH) + "/"
+                + (now.get(Calendar.MONTH) + 1) + "/"
+                + now.get(Calendar.YEAR);
+        final boolean isToday = selectedDateStr.equals(todayStr);
+
+        // Jika hari ini: jam awal di picker = jam sekarang, agar user tidak bisa pilih jam lampau
+        // Jika hari lain (besok dst): jam awal bebas mulai 00:00
+        int defaultHour   = isToday ? now.get(Calendar.HOUR_OF_DAY) : 0;
+        int defaultMinute = isToday ? now.get(Calendar.MINUTE)       : 0;
+
+
 
         TimePickerDialog timePickerDialog = new TimePickerDialog(this, (view, hourOfDay, minuteOfHour) -> {
+
+            // Validasi tambahan: jika tanggalnya hari ini dan jam yang dipilih sudah lewat
+            if (isToday) {
+                int nowHour   = now.get(Calendar.HOUR_OF_DAY);
+                int nowMinute = now.get(Calendar.MINUTE);
+
+                boolean jamSudahLewat = (hourOfDay < nowHour)
+                        || (hourOfDay == nowHour && minuteOfHour <= nowMinute);
+
+                if (jamSudahLewat) {
+                    // Tolak pilihan dan tampilkan pesan, lalu buka ulang picker
+                    Toast.makeText(this,
+                            "Jam tidak boleh sebelum atau sama dengan waktu sekarang!",
+                            Toast.LENGTH_SHORT).show();
+                    showTimePicker(btnPickDate, btnPickTime); // Buka ulang picker
+                    return;
+                }
+            }
+
             // Format jam agar selalu 2 digit (misal: 08:05, bukan 8:5)
             String time = String.format("%02d:%02d", hourOfDay, minuteOfHour);
             btnPickTime.setText(time);
-        }, hour, minute, true); // 'true' untuk format 24 jam
+
+        }, defaultHour, defaultMinute, true); // 'true' untuk format 24 jam
 
         timePickerDialog.show();
     }
@@ -489,7 +523,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkOverdueTasks(List<Task> tasks) {
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("d/M/yyyy", java.util.Locale.getDefault());
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("d/M/yyyy HH:mm", java.util.Locale.getDefault());
+
+        // Waktu sekarang persis (termasuk jam dan menit) — BUKAN tengah malam
+        java.util.Date now = new java.util.Date();
 
         Calendar todayCal = Calendar.getInstance();
         todayCal.set(Calendar.HOUR_OF_DAY, 0);
@@ -516,12 +553,55 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Tampilkan alert jika ada tugas yang terlambat
-        if (overdueTasks.length() > 0) {
+        if (overdueTasks.length() > 0 && !isAlertShowing) {
+            isAlertShowing = true;
             new AlertDialog.Builder(this)
                     .setTitle("⚠️ Tugas Terlambat dari Deadline!")
-                    .setMessage("Tugas berikut belum diselesaikan dan sudah melewati deadline:\n\n" + overdueTasks.toString())
-                    .setPositiveButton("OK", null)
+                    .setMessage("Tugas berikut belum diselesaikan dan sudah melewati deadline:\n\n" + overdueTasks)
+                    .setPositiveButton("OK", (dialog, which) -> isAlertShowing = false)
+                    .setCancelable(false)
                     .show();
         }
+    }
+
+    private android.os.Handler realtimeHandler = new android.os.Handler();
+    private boolean isAlertShowing = false; // Cegah alert menumpuk
+
+    private Runnable realtimeChecker = new Runnable() {
+        @Override
+        public void run() {
+            // Ambil data terbaru dari DB lalu cek
+            List<Task> freshTasks = new java.util.ArrayList<>();
+            android.database.Cursor cursor = dbHelper.getAllTasks();
+            if (cursor.moveToFirst()) {
+                do {
+                    int id = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_ID));
+                    String title = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_TITLE));
+                    String course = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_COURSE));
+                    String priority = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_PRIORITY));
+                    String deadline = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_DEADLINE));
+                    int status = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.COL_STATUS));
+                    freshTasks.add(new Task(id, title, course, priority, deadline, status));
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+
+            checkOverdueTasks(freshTasks); // Cek apakah ada yang baru lewat deadline
+
+            // Jadwalkan ulang 30 detik kemudian
+            realtimeHandler.postDelayed(this, 10 * 1000);
+        }
+    };
+
+    private void startRealtimeCheck() {
+        // Mulai timer pertama kali — delay 30 detik setelah app dibuka
+        realtimeHandler.post(realtimeChecker);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Hentikan timer saat Activity ditutup agar tidak memory leak
+        realtimeHandler.removeCallbacks(realtimeChecker);
     }
 }

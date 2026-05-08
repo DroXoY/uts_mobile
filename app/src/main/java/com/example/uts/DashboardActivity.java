@@ -76,14 +76,11 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private int hitungTugasTerlambat() {
-        SimpleDateFormat sdf = new SimpleDateFormat("d/M/yyyy", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("d/M/yyyy HH:mm", Locale.getDefault());
 
-        // Ambil tanggal hari ini (tengah malam)
-        Calendar todayCal = Calendar.getInstance();
-        todayCal.set(Calendar.HOUR_OF_DAY, 0);
-        todayCal.set(Calendar.MINUTE, 0);
-        todayCal.set(Calendar.SECOND, 0);
-        todayCal.set(Calendar.MILLISECOND, 0);
+        java.util.Date now = new java.util.Date();
+
+
 
         int count = 0;
         // Ambil semua tugas yang belum selesai (status = 0)
@@ -96,7 +93,7 @@ public class DashboardActivity extends AppCompatActivity {
                 try {
                     java.util.Date deadlineDate = sdf.parse(deadline);
                     // Jika deadline SEBELUM hari ini → terlambat
-                    if (deadlineDate != null && deadlineDate.before(todayCal.getTime())) {
+                    if (deadlineDate != null && deadlineDate.before(now)) {
                         count++;
                     }
                 } catch (Exception e) {

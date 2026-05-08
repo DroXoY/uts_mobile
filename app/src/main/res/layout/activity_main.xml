@@ -69,62 +69,69 @@
         android:id="@+id/nav_buttons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:paddingHorizontal="24dp"
-        android:layout_marginTop="70dp"
+        android:layout_marginTop="20dp"
         app:layout_constraintTop_toBottomOf="@id/tv_title">
 
+        <!-- Baris 1: Tombol Dashboard (penuh selebar 2 tombol di bawahnya) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_nav_dashboard"
             style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-            android:layout_width="18dp"
-            android:layout_height="60dp"
-            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
             android:text="Dashboard"
-            android:textSize="8dp"
+            android:textSize="12sp"
             android:textAllCaps="false"
             app:cornerRadius="12dp"
-            app:icon="@drawable/ic_sort"
-            android:layout_marginEnd="12dp"
-            android:layout_marginTop="6dp"
+            app:icon="@drawable/ic_chart"
+            android:layout_marginBottom="6dp"
             app:backgroundTint="#5C7CFF"
             android:textColor="@android:color/white"
             app:iconTint="@android:color/white" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_nav_daftar"
-            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-            android:layout_width="0dp"
-            android:layout_height="55dp"
-            android:layout_weight="1"
-            android:text="List Tugas"
-            android:textSize="8dp"
-            android:textAllCaps="false"
-            app:cornerRadius="12dp"
-            app:icon="@drawable/id_edit"
-            android:layout_marginEnd="8dp"
+        <!-- Baris 2: List Tugas (kiri) + Kalender (kanan) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-            app:backgroundTint="@android:color/white"
-            android:textColor="#3D5AFE"
-            app:iconTint="#3D5AFE" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_nav_daftar"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:text="List&#10;Tugas"
+                android:textSize="10sp"
+                android:textAllCaps="false"
+                android:gravity="center"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/id_edit"
+                android:layout_marginEnd="8dp"
+                app:backgroundTint="@android:color/white"
+                android:textColor="#3D5AFE"
+                app:iconTint="#3D5AFE" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_nav_kalender"
-            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-            android:layout_width="10dp"
-            android:layout_height="55dp"
-            android:layout_weight="1"
-            android:text="Kalender"
-            android:textSize="8dp"
-            android:textAllCaps="false"
-            app:cornerRadius="12dp"
-            app:icon="@drawable/ic_calendar"
-            android:layout_marginTop="7dp"
-            android:layout_marginStart="8dp"
-            app:backgroundTint="#5C7CFF"
-            android:textColor="@android:color/white"
-            app:iconTint="@android:color/white" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_nav_kalender"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Kalender"
+                android:textSize="12sp"
+                android:textAllCaps="false"
+                android:gravity="center"
+                app:cornerRadius="12dp"
+                app:icon="@drawable/ic_calendar"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                app:backgroundTint="#5C7CFF"
+                android:textColor="@android:color/white"
+                app:iconTint="@android:color/white" />
 
+        </LinearLayout>
 
     </LinearLayout>
 
