@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">uts</string>
+    <string name="nama_kamu_nnim_123456789">Nama Kamu\nNIM: 123456789</string>
+    <string name="tentang_kami_nfarrel_endra_a_24410100016_n_michael_christoper_24410100007_n_jonathan_kevin_24410100027">Tentang Kami\nFarrel Endra A. - 24410100016\n Michael Christoper - 24410100007\n Jonathan Kevin - 24410100027</string>
 </resources>

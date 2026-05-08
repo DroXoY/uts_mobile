@@ -47,41 +47,48 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         holder.tvPriority.setText(task.getPriority());
         holder.tvDate.setText(task.getDeadline());
 
+        // --- LOGIKA WARNA OVERDUE (REVISI) ---
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("d/M/yyyy HH:mm", java.util.Locale.getDefault());
+        java.util.Date now = new java.util.Date();
+        boolean isOverdue = false;
 
-        // Hapus listener sementara saat set nilai awal
+        try {
+            java.util.Date deadlineDate = sdf.parse(task.getDeadline());
+            if (deadlineDate != null && deadlineDate.before(now) && task.getStatus() == 0) {
+                isOverdue = true;
+            }
+        } catch (Exception e) {
+            isOverdue = false;
+        }
+
+        // Atur Warna Kartu berdasarkan status Overdue
+        if (isOverdue) {
+            // Jika TERLAMBAT: Background Pink Kemerahan, Border Merah
+            holder.cardTask.setCardBackgroundColor(Color.parseColor("#FFF1F0")); // Pink sangat muda
+            holder.cardTask.setStrokeColor(Color.parseColor("#FFA39E")); // Border merah muda
+            holder.tvTitle.setTextColor(Color.parseColor("#CF1322")); // Teks judul jadi merah gelap
+        } else {
+            // Jika NORMAL: Background Putih, Border Abu-abu (seperti desain awalmu)
+            holder.cardTask.setCardBackgroundColor(Color.WHITE);
+            holder.cardTask.setStrokeColor(Color.parseColor("#E0E0E0"));
+            holder.tvTitle.setTextColor(Color.parseColor("#212121"));
+        }
+        // ---------------------------------------
+
+        // Logika Coret (Strikethrough) tetap ada
         holder.cbDone.setOnCheckedChangeListener(null);
-
-        // Logika Coret (Strikethrough)
         if (task.getStatus() == 1) {
             holder.cbDone.setChecked(true);
             holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             holder.tvTitle.setTextColor(Color.GRAY);
+            // Jika sudah selesai, kembalikan warna kartu ke netral
             holder.cardTask.setCardBackgroundColor(Color.parseColor("#F5F5F5"));
-            holder.tvPriority.setBackgroundColor(Color.parseColor("#E0E0E0"));
-            holder.tvPriority.setTextColor(Color.parseColor("#9E9E9E"));
-            holder.tvDate.setTextColor(Color.parseColor("#9E9E9E"));
-            holder.tvCourse.setTextColor(Color.parseColor("#9E9E9E"));
-            holder.btnEdit.setColorFilter(Color.parseColor("#9E9E9E"));
-            holder.btnDelete.setColorFilter(Color.parseColor("#9E9E9E"));
-
-
-        } else {
+            holder.cardTask.setStrokeColor(Color.parseColor("#E0E0E0"));
+        } else if (!isOverdue) { // Jika belum selesai dan TIDAK overdue
             holder.cbDone.setChecked(false);
             holder.tvTitle.setPaintFlags(holder.tvTitle.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
-            holder.tvTitle.setTextColor(Color.parseColor("#212121")); // Warna teks default
-            // Ganti warna background dan teks berdasarkan level prioritas
-            if (task.getPriority().equalsIgnoreCase("TINGGI")) {
-                holder.tvPriority.setTextColor(Color.parseColor("#C62828")); // Teks Merah
-                holder.tvPriority.setBackgroundColor(Color.parseColor("#FFEBEE")); // BG Merah Muda
-            } else if (task.getPriority().equalsIgnoreCase("SEDANG")) {
-                holder.tvPriority.setTextColor(Color.parseColor("#F57F17")); // Teks Oranye
-                holder.tvPriority.setBackgroundColor(Color.parseColor("#FFFDE7")); // BG Kuning
-            } else {
-                holder.tvPriority.setTextColor(Color.parseColor("#2E7D32")); // Teks Hijau
-                holder.tvPriority.setBackgroundColor(Color.parseColor("#E8F5E9")); // BG Hijau Muda
-            }
         }
-        // Listener Klik
+
         holder.cbDone.setOnCheckedChangeListener((buttonView, isChecked) -> listener.onStatusChanged(task.getId(), isChecked));
         holder.btnDelete.setOnClickListener(v -> listener.onDeleteClicked(task.getId()));
         holder.btnEdit.setOnClickListener(v -> listener.onEditClicked(task));

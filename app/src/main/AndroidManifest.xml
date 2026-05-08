@@ -7,13 +7,14 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_todo"
-        android:label="TODOLIST GWEH BANGET INI NJIR LAH"
+        android:label="TUDULIST"
         android:roundIcon="@mipmap/ic_todo"
         android:supportsRtl="true"
         android:theme="@style/Theme.Uts">
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

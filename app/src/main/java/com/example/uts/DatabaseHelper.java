@@ -100,4 +100,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.rawQuery("SELECT * FROM " + TABLE_NAME + " WHERE " + COL_DEADLINE + " LIKE ?", new String[]{date + "%"});
     }
 
+    public int getTotalSelesai() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM " + TABLE_NAME + " WHERE " + COL_STATUS + " = 1", null);
+        int count = 0;
+        if (cursor.moveToFirst()) count = cursor.getInt(0);
+        cursor.close();
+        return count;
+    }
+
+    public Cursor getAllUnfinishedTasks() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT * FROM " + TABLE_NAME + " WHERE " + COL_STATUS + " = 0", null);
+    }
+
 }
